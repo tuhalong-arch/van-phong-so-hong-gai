@@ -1,0 +1,411 @@
+import React, { useState } from 'react';
+import { 
+  Calendar, FileText, UploadCloud, Clock, MapPin, Users, 
+  AlertCircle, CheckCircle2, Search, Filter, Plus, Printer, 
+  ChevronRight, Building2, Eye, Trash2, ArrowUpRight
+} from 'lucide-react';
+
+export default function SmartWardPortal() {
+  const [activeTab, setActiveTab] = useState('meetings'); // 'petitions' | 'meetings'
+  
+  // Dữ liệu mẫu Lịch họp
+  const [meetings, setMeetings] = useState([
+    {
+      id: 1,
+      title: "Họp rà soát tiến độ giải phóng mặt bằng tuyến đường bao biển",
+      time: "08:00 - Thứ 4, 30/09/2026",
+      location: "Hội trường A - Tầng 2 UBND Phường",
+      attendees: "Đ/c Chủ tịch UBND, Ban QLDA, Tổ trưởng Tổ 1, 2, 3",
+      sourceFile: "GM_08_GPMB.pdf",
+      status: "Sắp diễn ra"
+    },
+    {
+      id: 2,
+      title: "Giao ban Thường trực Đảng ủy - HĐND - UBND định kỳ",
+      time: "14:00 - Thứ 6, 02/10/2026",
+      location: "Phòng họp số 1",
+      attendees: "Thường trực Đảng ủy, Lãnh đạo HĐND, UBND phường",
+      sourceFile: "GM_GiaoBan_T10.docx",
+      status: "Chờ duyệt"
+    }
+  ]);
+
+  // Trạng thái kéo thả & Phân tích OCR
+  const [isDragging, setIsDragging] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [extractedData, setExtractedData] = useState(null);
+
+  // Dữ liệu mẫu Đơn thư
+  const [petitions, setPetitions] = useState([
+    {
+      id: "DT-2026-089",
+      sender: "Trần Văn Nam",
+      address: "Tổ 4, Khu phố 2, P. Hồng Gai",
+      category: "Trật tự đô thị",
+      summary: "Kiến nghị xử lý lấn chiếm vỉa hè kinh doanh tại đường Lê Thánh Tông",
+      officer: "Nguyễn Văn Hùng (Địa chính - Xây dựng)",
+      deadline: "05/10/2026",
+      status: "Đang xác minh",
+      urgency: "Bình thường"
+    },
+    {
+      id: "DT-2026-090",
+      sender: "Vũ Thị Mai",
+      address: "Tổ 7, Khu phố 3, P. Hồng Gai",
+      category: "Đất đai",
+      summary: "Đề nghị cấp đổi Giấy chứng nhận quyền sử dụng đất gia đình",
+      officer: "Lê Minh Tuấn (Tư pháp - Hộ tịch)",
+      deadline: "01/10/2026",
+      status: "Sắp quá hạn",
+      urgency: "Khẩn"
+    }
+  ]);
+
+  // Giả lập bóc tách văn bản AI/OCR khi thả file
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const files = e.dataTransfer ? e.dataTransfer.files : e.target.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    setIsProcessing(true);
+
+    // Mô phỏng AI bóc tách nội dung giấy mời sau 1.5 giây
+    setTimeout(() => {
+      setExtractedData({
+        title: "Họp triển khai phương án phòng chống mưa bão & ngập úng đô thị",
+        time: "08:30 - Thứ 5, 01/10/2026",
+        location: "Hội trường Trung tâm - Trụ sở UBND Phường",
+        attendees: "Chủ tịch UBND phường chủ trì, Trưởng ban CHQS, Trưởng Công an phường, Bí thư chi bộ 8 khu phố",
+        fileName: file.name
+      });
+      setIsProcessing(false);
+    }, 1500);
+  };
+
+  const handleSaveExtractedMeeting = () => {
+    if (!extractedData) return;
+    const newMeeting = {
+      id: Date.now(),
+      title: extractedData.title,
+      time: extractedData.time,
+      location: extractedData.location,
+      attendees: extractedData.attendees,
+      sourceFile: extractedData.fileName,
+      status: "Sắp diễn ra"
+    };
+    setMeetings([newMeeting, ...meetings]);
+    setExtractedData(null);
+  };
+
+  return (
+    <div className="flex h-screen bg-slate-50 text-slate-800 font-sans">
+      {/* 1. SIDEBAR ĐIỀU HƯỚNG */}
+      <aside className="w-64 bg-[#1B365D] text-white flex flex-col justify-between shrink-0 shadow-lg">
+        <div>
+          <div className="p-5 border-b border-blue-900/60 flex items-center space-x-3">
+            <div className="p-2 bg-amber-500 rounded-lg text-white">
+              <Building2 className="w-6 h-6" />
+            </div>
+            <div>
+              <h1 className="font-bold text-sm tracking-wide leading-tight">UBND PHƯỜNG HỒNG GAI</h1>
+              <p className="text-[11px] text-blue-200">Cổng Văn phòng Số v2.0</p>
+            </div>
+          </div>
+
+          <nav className="p-4 space-y-1.5">
+            <button
+              onClick={() => setActiveTab('meetings')}
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+                activeTab === 'meetings' 
+                  ? 'bg-blue-700/80 text-white shadow-sm' 
+                  : 'text-blue-100 hover:bg-blue-800/50'
+              }`}
+            >
+              <Calendar className="w-4 h-4" />
+              <span>Lịch họp & Giấy mời</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('petitions')}
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+                activeTab === 'petitions' 
+                  ? 'bg-blue-700/80 text-white shadow-sm' 
+                  : 'text-blue-100 hover:bg-blue-800/50'
+              }`}
+            >
+              <FileText className="w-4 h-4" />
+              <span>Theo dõi Đơn thư</span>
+            </button>
+          </nav>
+        </div>
+
+        <div className="p-4 border-t border-blue-900/60 text-xs text-blue-300">
+          Chuyên viên trực: <span className="font-semibold text-white">Văn phòng HĐND - UBND</span>
+        </div>
+      </aside>
+
+      {/* 2. KHU VỰC NỘI DUNG CHÍNH */}
+      <main className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8">
+          <div>
+            <h2 className="text-lg font-bold text-slate-800">
+              {activeTab === 'meetings' ? 'Quản lý Lịch công tác & Bóc tách Giấy mời' : 'Hệ thống Quản trị & Xử lý Đơn thư Công dân'}
+            </h2>
+            <p className="text-xs text-slate-500">Mô hình Chuyển đổi số cải cách hành chính cấp cơ sở</p>
+          </div>
+          <div className="flex items-center space-x-3">
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+              Hệ thống Online
+            </span>
+          </div>
+        </header>
+
+        {/* Nội dung tab */}
+        <div className="flex-1 overflow-y-auto p-8 space-y-6">
+          {activeTab === 'meetings' ? (
+            <div className="space-y-6">
+              {/* KHU VỰC KÉO THẢ GIẤY MỜI HỌP */}
+              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+                  <UploadCloud className="w-4 h-4 text-blue-600" />
+                  Kéo thả Giấy mời họp (Tự động nhận diện OCR & Phân tích AI)
+                </h3>
+                
+                <div 
+                  onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                  onDragLeave={() => setIsDragging(false)}
+                  onDrop={handleDrop}
+                  className={`border-2 border-dashed rounded-xl p-6 text-center transition-all ${
+                    isDragging ? 'border-blue-600 bg-blue-50/50' : 'border-slate-300 hover:border-slate-400 bg-slate-50/50'
+                  }`}
+                >
+                  <input 
+                    type="file" 
+                    id="fileUpload" 
+                    className="hidden" 
+                    onChange={handleDrop}
+                    accept=".pdf,.docx,.doc,.png,.jpg,.jpeg"
+                  />
+                  <label htmlFor="fileUpload" className="cursor-pointer flex flex-col items-center">
+                    <UploadCloud className="w-10 h-10 text-slate-400 mb-2" />
+                    <p className="text-sm font-medium text-slate-700">Kéo file Giấy mời vào đây hoặc <span className="text-blue-600 hover:underline">chọn từ máy tính</span></p>
+                    <p className="text-xs text-slate-400 mt-1">Hỗ trợ PDF, DOCX hoặc Ảnh chụp văn bản có dấu đỏ</p>
+                  </label>
+                </div>
+
+                {isProcessing && (
+                  <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-3">
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-600 border-t-transparent"></div>
+                    <span className="text-xs font-medium text-blue-800">Đang quét OCR và bóc tách thông tin: Nội dung, Thời gian, Địa điểm, Thành phần...</span>
+                  </div>
+                )}
+
+                {/* FORM XÁC NHẬN DỮ LIỆU ĐÃ BÓC TÁCH */}
+                {extractedData && (
+                  <div className="mt-6 border border-emerald-200 bg-emerald-50/30 p-5 rounded-xl">
+                    <div className="flex justify-between items-center mb-4">
+                      <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Kết quả bóc tách tự động từ: {extractedData.fileName}
+                      </span>
+                      <button 
+                        onClick={() => setExtractedData(null)}
+                        className="text-xs text-slate-400 hover:text-slate-600"
+                      >
+                        Hủy bỏ
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-xs font-semibold text-slate-700">Nội dung họp</label>
+                        <input 
+                          type="text" 
+                          value={extractedData.title}
+                          onChange={(e) => setExtractedData({...extractedData, title: e.target.value})}
+                          className="mt-1 w-full text-xs p-2.5 bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-slate-700">Thời gian</label>
+                        <input 
+                          type="text" 
+                          value={extractedData.time}
+                          onChange={(e) => setExtractedData({...extractedData, time: e.target.value})}
+                          className="mt-1 w-full text-xs p-2.5 bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-slate-700">Địa điểm</label>
+                        <input 
+                          type="text" 
+                          value={extractedData.location}
+                          onChange={(e) => setExtractedData({...extractedData, location: e.target.value})}
+                          className="mt-1 w-full text-xs p-2.5 bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-slate-700">Thành phần mời</label>
+                        <input 
+                          type="text" 
+                          value={extractedData.attendees}
+                          onChange={(e) => setExtractedData({...extractedData, attendees: e.target.value})}
+                          className="mt-1 w-full text-xs p-2.5 bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mt-4 flex justify-end">
+                      <button 
+                        onClick={handleSaveExtractedMeeting}
+                        className="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-xs font-medium transition-colors shadow-sm"
+                      >
+                        Lưu vào Lịch công tác tuần
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* DANH SÁCH LỊCH HỌP */}
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="p-4 border-b border-slate-200 flex justify-between items-center">
+                  <h3 className="font-bold text-sm text-slate-800">Lịch họp & Công tác cơ quan trong tuần</h3>
+                  <button className="flex items-center gap-1.5 text-xs font-medium text-slate-600 hover:text-blue-700 border border-slate-200 px-3 py-1.5 rounded-lg">
+                    <Printer className="w-3.5 h-3.5" /> In lịch tuần A4
+                  </button>
+                </div>
+
+                <div className="divide-y divide-slate-100">
+                  {meetings.map((m) => (
+                    <div key={m.id} className="p-4 hover:bg-slate-50 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="space-y-1.5 max-w-3xl">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-sm text-slate-900">{m.title}</span>
+                          <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono">{m.sourceFile}</span>
+                        </div>
+                        <div className="flex flex-wrap gap-4 text-xs text-slate-500">
+                          <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5 text-blue-600" /> {m.time}</span>
+                          <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 text-emerald-600" /> {m.location}</span>
+                          <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5 text-slate-500" /> {m.attendees}</span>
+                        </div>
+                      </div>
+                      <span className="inline-flex self-start md:self-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 shrink-0">
+                        {m.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* PHÂN HỆ QUẢN LÝ ĐƠN THƯ */
+            <div className="space-y-4">
+              <div className="flex justify-between items-center gap-4">
+                <div className="relative flex-1 max-w-sm">
+                  <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                  <input 
+                    type="text" 
+                    placeholder="Tìm theo người gửi, số đơn, khu phố..." 
+                    className="w-full pl-9 pr-4 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                  />
+                </div>
+                <button className="flex items-center gap-1.5 px-3 py-2 bg-blue-700 text-white rounded-lg text-xs font-medium hover:bg-blue-800 transition-colors">
+                  <Plus className="w-3.5 h-3.5" /> Tiếp nhận Đơn mới
+                </button>
+              </div>
+
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <table className="w-full text-left text-xs text-slate-600">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider">
+                    <tr>
+                      <th className="p-3">Mã đơn</th>
+                      <th className="p-3">Người gửi & Địa chỉ</th>
+                      <th className="p-3">Lĩnh vực & Nội dung tóm tắt</th>
+                      <th className="p-3">Cán bộ thụ lý</th>
+                      <th className="p-3">Thời hạn</th>
+                      <th className="p-3">Trạng thái</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {petitions.map((p) => (
+                      <tr key={p.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="p-3 font-semibold text-blue-700">{p.id}</td>
+                        <td className="p-3">
+                          <div className="font-bold text-slate-900">{p.sender}</div>
+                          <div className="text-[11px] text-slate-400">{p.address}</div>
+                        </td>
+                        <td className="p-3 max-w-xs">
+                          <span className="inline-block px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-medium mb-1">
+                            {p.category}
+                          </span>
+                          <div className="truncate text-slate-700">{p.summary}</div>
+                        </td>
+                        <td className="p-3 text-slate-700">{p.officer}</td>
+                        <td className="p-3">
+                          <span className={p.urgency === 'Khẩn' ? 'text-red-600 font-bold' : 'text-slate-600'}>
+                            {p.deadline}
+                          </span>
+                        </td>
+                        <td className="p-3">
+                          <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium ${
+                            p.status === 'Sắp quá hạn' 
+                              ? 'bg-amber-100 text-amber-800' 
+                              : 'bg-blue-100 text-blue-800'
+                          }`}>
+                            {p.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+}
+import express from 'express';
+import multer from 'multer';
+import { GoogleGenAI } from '@google/genai';
+
+const app = express();
+const upload = multer({ dest: 'uploads/' });
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+app.post('/api/parse-invitation', upload.single('file'), async (req, res) => {
+  try {
+    const file = req.file;
+    
+    // Gọi mô hình đa phương thức phân tích ảnh hoặc PDF của giấy mời
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [
+        {
+          role: 'user',
+          parts: [
+            {
+              text: `Bạn là trợ lý hành chính văn phòng UBND phường. Hãy đọc văn bản giấy mời này và trích xuất đúng 4 trường thông tin theo định dạng JSON:
+              - title: Nội dung cuộc họp
+              - time: Thời gian họp cụ thể (giờ, ngày, tháng, năm)
+              - location: Địa điểm tổ chức
+              - attendees: Thành phần tham dự`
+            },
+            // Đính kèm buffer file đã tải lên
+          ]
+        }
+      ],
+      config: { responseMimeType: 'application/json' }
+    });
+
+    const parsedData = JSON.parse(response.text);
+    res.json({ success: true, data: parsedData });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
